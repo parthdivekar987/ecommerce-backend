@@ -102,7 +102,7 @@ public class AppConfig {
                             "http://localhost:3000",
                             "http://localhost:5173",
                             "http://localhost:4200",
-                            "https://insaneshopcart-bycart.vercel.app/"
+                            "https://insaneshopcart-bycart.vercel.app"
 
                     ));
                     cfg.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
