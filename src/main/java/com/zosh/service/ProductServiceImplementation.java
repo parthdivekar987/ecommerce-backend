@@ -4,6 +4,7 @@ import com.zosh.exception.ProductException;
 import com.zosh.model.Category;
 import com.zosh.model.Product;
 import com.zosh.repository.CategoryRepository;
+import com.zosh.repository.OrderItemRepository; // ADDED: Import OrderItemRepository
 import com.zosh.repository.ProductRepository;
 import com.zosh.request.CreateProductRequest;
 import org.springframework.data.domain.Page;
@@ -23,17 +24,24 @@ public class ProductServiceImplementation implements ProductService {
     private final ProductRepository productRepository;
     private final UserService userService;
     private final CategoryRepository categoryRepository;
+    private final OrderItemRepository orderItemRepository; // ADDED: Repository for checking orders
 
+    // MODIFIED: Added OrderItemRepository to the constructor
     public ProductServiceImplementation(ProductRepository productRepository,
                                         UserService userService,
-                                        CategoryRepository categoryRepository) {
+                                        CategoryRepository categoryRepository,
+                                        OrderItemRepository orderItemRepository) {
         this.productRepository = productRepository;
         this.userService = userService;
         this.categoryRepository = categoryRepository;
+        this.orderItemRepository = orderItemRepository; // ADDED
     }
+
+    // ... (Your other methods like createProduct, updateProduct, etc., remain the same) ...
 
     @Override
     public Product createProduct(CreateProductRequest req) {
+        // ... (No changes needed here)
         Category topLevel = categoryRepository.findByName(req.getToplavelCategory());
         if (topLevel == null) {
             Category topLevelCategory = new Category();
@@ -77,16 +85,30 @@ public class ProductServiceImplementation implements ProductService {
         return productRepository.save(product);
     }
 
+    // MODIFIED: The entire deleteProduct method is updated with the safety logic.
     @Override
     public String deleteProduct(Long productId) throws ProductException {
         Product product = findProductById(productId);
-        product.getSizes().clear();
+
+        // Safety Check: Count how many order items are linked to this product.
+        int orderedItemsCount = orderItemRepository.countByProductId(productId);
+
+        if (orderedItemsCount > 0) {
+            // If the product is in use, throw our custom exception with a clear message.
+            throw new ProductException("Cannot delete product with ID " + productId +
+                    ". It is referenced by " + orderedItemsCount + " existing order(s).");
+        }
+
+        // If the check passes (count is 0), then we can safely delete the product.
+        product.getSizes().clear(); // This helps JPA to remove associations before deleting
         productRepository.delete(product);
-        return "Product deleted Successfully";
+
+        return "Product deleted successfully.";
     }
 
     @Override
     public Product updateProduct(Long productId, Product req) throws ProductException {
+        // ... (No changes needed here)
         Product product = findProductById(productId);
         if (req.getQuantity() != 0) {
             product.setQuantity(req.getQuantity());
@@ -96,6 +118,7 @@ public class ProductServiceImplementation implements ProductService {
 
     @Override
     public Product findProductById(Long id) throws ProductException {
+        // ... (No changes needed here)
         Optional<Product> opt = productRepository.findById(id);
         if (opt.isPresent()) {
             return opt.get();
@@ -103,6 +126,7 @@ public class ProductServiceImplementation implements ProductService {
         throw new ProductException("Product not found with id: " + id);
     }
 
+    // ... (Your other methods remain the same) ...
     @Override
     public List<Product> findProductByCategory(String category) {
         return List.of();
