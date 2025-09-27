@@ -28,30 +28,27 @@ public class ProductController {
             @RequestParam(required = false) Integer minDiscount,
             @RequestParam(required = false) String sort,
             @RequestParam(required = false) String stock,
-
-            // --- FIX APPLIED ---
-            // pageNumber is now optional and defaults to 0
             @RequestParam(defaultValue = "0", required = false) Integer pageNumber,
-            // pageSize is now optional and defaults to 10
             @RequestParam(defaultValue = "10", required = false) Integer pageSize
     ) {
+        // --- NEW LOG 1: Log the incoming request parameters ---
+        System.out.println("--- REQUEST RECEIVED AT /api/products ---");
+        System.out.println("Category received: " + category);
+
         Page<Product> res = productService.getAllProduct(
                 category, color, size, minPrice, maxPrice,
                 minDiscount, sort, stock, pageNumber, pageSize);
 
-        System.out.println("complete products");
+        // --- NEW LOG 2: Log the number of products being returned ---
+        System.out.println("Backend is returning " + res.getContent().size() + " products.");
+        System.out.println("----------------------------------------");
 
-        // --- BEST PRACTICE FIX APPLIED ---
-        // Changed HttpStatus.ACCEPTED to HttpStatus.OK for successful GET request
         return new ResponseEntity<>(res, HttpStatus.OK);
     }
 
     @GetMapping("/products/id/{productId}")
     public ResponseEntity<Product> findProductByIdHandler(@PathVariable Long productId) throws ProductException {
         Product product = productService.findProductById(productId);
-
-        // --- BEST PRACTICE FIX APPLIED ---
-        // Changed HttpStatus.ACCEPTED to HttpStatus.OK for consistency
         return new ResponseEntity<>(product, HttpStatus.OK);
     }
 }
